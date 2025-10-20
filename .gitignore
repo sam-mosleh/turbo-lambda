@@ -1,0 +1,25 @@
+# Project-specific files
+/prototyping/
+
+# Environment variable files
+.env*
+!.envrc
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Coverage results
+.coverage
+coverage.xml
+
+
+# Mac
+.DS_store
