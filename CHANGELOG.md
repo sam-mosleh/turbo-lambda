@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.1.1 (2025-10-21)
+
+### Fix
+
+* 🐛 Add package version in the lock file ([`6969587`](https://github.com/sam-mosleh/turbo-lambda/commit/69695875c5022891357587180405832dee144bdd))
+
 ## v0.1.0 (2025-10-21)
 
 ### Other
