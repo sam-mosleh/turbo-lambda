@@ -76,7 +76,6 @@ fresh: clean install
 [group('lifecycle')]
 release *args:
     @just _psr -v version {{ args }}
-    uv build
     uv publish
 
 # Check release output
