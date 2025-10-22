@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v6.0.0
     hooks:
       - id: check-ast
       - id: check-case-conflict
@@ -16,8 +16,6 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
-      - id: fix-encoding-pragma
-        args: [--remove]
       - id: forbid-submodules
       - id: mixed-line-ending
         args: [--fix=lf]
@@ -31,33 +29,23 @@ repos:
           - --autofix
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.24.2
+    rev: v8.28.0
     hooks:
       - id: gitleaks
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.9
+    rev: 0.9.4
     hooks:
       - id: uv-lock
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.5
+    rev: v0.14.1
     hooks:
       - id: ruff-check
         args:
           - --fix
           - --exit-non-zero-on-fix
       - id: ruff-format
-
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.83.5
-    hooks:
-      - id: terraform_fmt
-      - id: terraform_tflint
-      - id: terraform_validate
-      - id: terraform_providers_lock
-        args:
-          - --hook-config=--mode=only-check-is-current-lockfile-cross-platform
 
   - repo: https://github.com/tsvikas/sync-with-uv
     rev: v0.4.0
