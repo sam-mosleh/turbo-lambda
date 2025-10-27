@@ -34,12 +34,12 @@ repos:
       - id: gitleaks
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.4
+    rev: 0.9.5
     hooks:
       - id: uv-lock
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.1
+    rev: v0.14.2
     hooks:
       - id: ruff-check
         args:
@@ -48,6 +48,6 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/tsvikas/sync-with-uv
-    rev: v0.4.0
+    rev: v0.5.0rc1
     hooks:
       - id: sync-with-uv
