@@ -5,18 +5,13 @@ description = "Turbo Lambda Description"
 readme = "README.md"
 authors = [{ name = "Sam Mosleh", email = "sam.mosleh.d@gmail.com" }]
 requires-python = ">=3.12"
-dependencies = [
-    "orjson>=3.11.3",
-    "pydantic-settings>=2.11.0",
-]
+dependencies = ["orjson>=3.11.3", "pydantic-settings>=2.11.0"]
 
 [dependency-groups]
-dev = [
-    "coverage>=7.11.0",
-    "ipykernel>=7.0.1",
-    "mypy>=1.18.2",
-    "pytest>=8.4.2",
-]
+dev = ["coverage>=7.11.0", "ipykernel>=7.0.1", "mypy>=1.18.2", "pytest>=8.4.2"]
+
+[project.scripts]
+update-turbo-lambda-layer = "turbo_lambda.scripts.update_turbo_lambda_layer:main"
 
 [build-system]
 requires = ["uv_build>=0.9.2,<0.10.0"]
@@ -47,7 +42,7 @@ partial_branches = [
     "# pragma: (nt|posix|cygwin|darwin|linux|msys|win32|cpython|pypy) (no )?cover\\b",
     "# pragma: (>=?|<=?|==|!=)\\d+\\.\\d+ cover\\b",
 ]
-exclude_also = ['case _:\n\s*assert_never\(.*\)']
+exclude_also = ['case _:\n\s*assert_never\(.*\)', 'if __name__ == .__main__.:']
 
 [tool.ruff.lint]
 select = [

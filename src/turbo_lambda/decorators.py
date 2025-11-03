@@ -115,17 +115,19 @@ def request_logger_handler[ResponseT](
             },
         )
 
-    return context_manager_middleware(
-        bind_extractor,
-    )(
-        log_after_call(
-            log_level=logging.DEBUG,
-            log_message="request",
-            result_extractor=lambda _: {},  # TODO: Remove after mypy fix
-        )(
-            func,
-        ),
+    @context_manager_middleware(bind_extractor)
+    @log_after_call(
+        log_level=logging.DEBUG,
+        log_message="request",
+        result_extractor=lambda _: {},  # TODO: Remove after mypy fix
     )
+    @wraps(func)
+    def handler(
+        event: schemas.EventType, context: schemas.LambdaContextProtocol
+    ) -> ResponseT:
+        return func(event, context)
+
+    return handler
 
 
 def gateway_handler[RequestT: pydantic.BaseModel](
@@ -149,19 +151,19 @@ def gateway_handler[RequestT: pydantic.BaseModel](
     ) -> dict[str, Any]:
         return {"status_code": response["statusCode"]}
 
-    return context_manager_middleware(
-        bind_extractor,
-    )(
-        log_after_call(
-            log_level=logging.DEBUG,
-            log_message="request",
-            result_extractor=result_extractor,
-        )(
-            error_transformer_handler(general_error_to_gateway_response)(
-                validated_handler(func),
-            ),
-        )
+    @context_manager_middleware(bind_extractor)
+    @log_after_call(
+        log_level=logging.DEBUG,
+        log_message="request",
+        result_extractor=result_extractor,
     )
+    @error_transformer_handler(general_error_to_gateway_response)
+    @validated_handler
+    @wraps(func)
+    def handler(event: RequestT) -> schemas.ApiGatewayResponse:
+        return func(event)
+
+    return handler
 
 
 def parallel_sqs_handler[RequestT](
@@ -169,27 +171,36 @@ def parallel_sqs_handler[RequestT](
     max_workers: int,
 ) -> Callable[
     [Callable[[RequestT], None]],
-    Callable[[schemas.SqsEvent[RequestT]], schemas.LambdaCheckpointResponse],
+    Callable[
+        [schemas.SqsEvent[schemas.OnErrorNone[RequestT]]],
+        schemas.LambdaCheckpointResponse,
+    ],
 ]:
     def decorator(
         func: Callable[[RequestT], None],
-    ) -> Callable[[schemas.SqsEvent[RequestT]], schemas.LambdaCheckpointResponse]:
+    ) -> Callable[
+        [schemas.SqsEvent[schemas.OnErrorNone[RequestT]]],
+        schemas.LambdaCheckpointResponse,
+    ]:
         func_annotations = inspect.signature(func, eval_str=True)
         request_type: type[RequestT] = next(
             iter(func_annotations.parameters.values())
         ).annotation
-        SqsEventType = schemas.SqsEvent[request_type]  # type: ignore[valid-type] # noqa: N806
 
         def single_record_processor(
-            rec: schemas.SqsRecordModel[RequestT],
+            rec: schemas.SqsRecordModel[schemas.OnErrorNone[RequestT]],
         ) -> schemas.LambdaCheckpointItem | None:
+            if rec.body is None:
+                return schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
             try:
                 func(rec.body)
             except Exception:
                 return schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
             return None
 
-        def wrapper(event: SqsEventType) -> schemas.LambdaCheckpointResponse:
+        def wrapper(
+            event: schemas.SqsEvent[schemas.OnErrorNone[request_type]],  # type: ignore[valid-type]
+        ) -> schemas.LambdaCheckpointResponse:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 responses = executor.map(single_record_processor, event.records)
             return schemas.LambdaCheckpointResponse(

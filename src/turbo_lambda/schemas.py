@@ -17,12 +17,25 @@ from typing import (
 
 import annotated_types
 import pydantic
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 
 IS_LAMBDA = os.environ.get("AWS_EXECUTION_ENV", "").startswith("AWS_Lambda_")
 EventType = NewType("EventType", dict[str, Any])
 _ROUTE_ARN_PATTERN_STR = r"^arn:aws:execute-api:(?P<region>[a-zA-Z0-9-]+):(?P<account_id>\d+):(?P<api_id>[a-zA-Z0-9]+)/(?P<stage>[^/]+)/(?P<method>[A-Z]+)/(?P<resource_path>.*)$"
 _ROUTE_ARN_PATTERN = re.compile(_ROUTE_ARN_PATTERN_STR)
+
+
+class _OnErrorNone:
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: pydantic.GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.with_default_schema(
+            default=None, schema=handler(source_type), on_error="default"
+        )
+
+
+type OnErrorNone[T] = Annotated[T | None, _OnErrorNone]
 
 
 class LambdaContextProtocol(Protocol):

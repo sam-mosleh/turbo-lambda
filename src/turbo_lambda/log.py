@@ -5,8 +5,8 @@ import logging
 import os
 import time
 from collections.abc import Callable, Generator, Iterable, Mapping
-from functools import singledispatch, wraps
-from typing import Any, Never, overload
+from functools import wraps
+from typing import Any, overload
 
 import orjson
 import pydantic
@@ -50,19 +50,14 @@ def _context_adder_filter(record: logging.LogRecord) -> bool:
     return True
 
 
-@singledispatch
-def orjson_custom_type_handler(value: Any) -> Never:
-    raise TypeError()
-
-
-@orjson_custom_type_handler.register(set)
-def _(value: set[Any]) -> Any:
-    return list(value)
-
-
-@orjson_custom_type_handler.register(pydantic.BaseModel)
-def _(value: pydantic.BaseModel) -> Any:
-    return value.model_dump(mode="json")
+def _orjson_custom_type_handler(value: Any) -> Any:
+    match value:
+        case pydantic.BaseModel():
+            return value.model_dump(mode="json")
+        case set():
+            return list(value)
+        case _:
+            raise TypeError()
 
 
 class JsonFormatter(logging.Formatter):
@@ -89,7 +84,7 @@ class JsonFormatter(logging.Formatter):
             for rec_key, rec_val in vars(record).items()
             if rec_key not in self.ignored_keys
         }
-        return orjson.dumps(message_dict, default=orjson_custom_type_handler).decode()
+        return orjson.dumps(message_dict, default=_orjson_custom_type_handler).decode()
 
 
 def config_default_logger() -> None:  # pragma: no cover

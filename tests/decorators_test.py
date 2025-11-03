@@ -219,6 +219,22 @@ def test_parallel_sqs_handler() -> None:
                     "eventSourceARN": "",
                     "awsRegion": "us-east-1",
                 },
+                {
+                    "messageId": "someid3",
+                    "receiptHandle": "",
+                    "body": "bad schema",
+                    "attributes": {
+                        "ApproximateReceiveCount": "1",
+                        "SentTimestamp": "1758197089376",
+                        "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+                        "ApproximateFirstReceiveTimestamp": "1758197089380",
+                    },
+                    "messageAttributes": {},
+                    "md5OfBody": "",
+                    "eventSource": "aws:sqs",
+                    "eventSourceARN": "",
+                    "awsRegion": "us-east-1",
+                },
             ]
         }
     )
@@ -229,7 +245,10 @@ def test_parallel_sqs_handler() -> None:
         assert message_event.message == first_message
 
     assert handler(sqs_event, SampleContext()) == {
-        "batchItemFailures": [{"itemIdentifier": sqs_event["Records"][1]["messageId"]}]
+        "batchItemFailures": [
+            {"itemIdentifier": sqs_event["Records"][1]["messageId"]},
+            {"itemIdentifier": sqs_event["Records"][2]["messageId"]},
+        ]
     }
 
 
