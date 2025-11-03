@@ -1,6 +1,16 @@
 
 # CHANGELOG
 
+## v0.2.0 (2025-11-03)
+
+### Other
+
+* ⬆️ Update pre-commit hooks ([`41424da`](https://github.com/sam-mosleh/turbo-lambda/commit/41424da3bffe19533c6a4697b7991f079e77ed77))
+
+### Feature
+
+* ✨ Add layer recipes to Justfile ([`f05e7d7`](https://github.com/sam-mosleh/turbo-lambda/commit/f05e7d787900a0d75a5be4785b6ebdc0560ab951))
+
 ## v0.1.1 (2025-10-21)
 
 ### Fix
