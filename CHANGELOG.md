@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.4.0 (2025-11-04)
+
+### Feature
+
+* ✨ Add log_exceptions flag to log_after_call ([`2e4bed8`](https://github.com/sam-mosleh/turbo-lambda/commit/2e4bed838bd4e7ddb5f1ba4be852dfb60618818e))
+
 ## v0.3.1 (2025-11-04)
 
 ### Fix
