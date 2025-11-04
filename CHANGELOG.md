@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.3.1 (2025-11-04)
+
+### Fix
+
+* 🐛 Fix type hints of result_extractor ([`4390a70`](https://github.com/sam-mosleh/turbo-lambda/commit/4390a707104813dc35ce6e6ba5e558e88a2ad5ad))
+
 ## v0.3.0 (2025-11-03)
 
 ## v0.2.0 (2025-11-03)
