@@ -108,15 +108,17 @@ def log_after_call[**P, T](
     *,
     log_level: int = logging.INFO,
     log_message: str = "call",
+    log_exceptions: bool = False,
     excluded_fields: Iterable[str] = ("self", "context"),
     result_extractor: Callable[[Any], dict[str, Any]] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
-def log_after_call[**P, T](
+def log_after_call[**P, T](  # noqa: PLR0913
     func: Callable[P, T] | None = None,
     log_level: int = logging.INFO,
     log_message: str = "call",
+    log_exceptions: bool = False,
     excluded_fields: Iterable[str] = ("self", "context"),
     result_extractor: Callable[[Any], dict[str, Any]] | None = None,
 ) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
@@ -133,23 +135,25 @@ def log_after_call[**P, T](
                     "firstlineno": func.__code__.co_firstlineno,
                 },
                 "arguments": get_arguments(sig, excluded_fields, f_args, f_kwargs),
+                "duration": None,
+                "exc_str": None,
             }
-            exc_info = False
             st = time.monotonic()
             try:
                 result = func(*f_args, **f_kwargs)
                 if result_extractor:
                     extra.update(result_extractor(result))
                 return result
-            except Exception:
-                exc_info = True
+            except Exception as e:
+                if log_exceptions:
+                    extra["exc_str"] = str(e)
                 raise
             finally:
                 extra["duration"] = time.monotonic() - st
                 logger.log(
-                    log_level if not exc_info else logging.ERROR,
+                    logging.ERROR if extra["exc_str"] is not None else log_level,
                     log_message,
-                    exc_info=exc_info,
+                    exc_info=extra["exc_str"] is not None,
                     extra=extra,
                 )
 

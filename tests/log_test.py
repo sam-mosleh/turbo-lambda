@@ -85,6 +85,7 @@ def test_log_after_call_without_args(logger_buffer: StringIO) -> None:
             "firstlineno": SampleClass.this_frame.f_lineno - 4,
         },
         "arguments": {"a": random_a},
+        "exc_str": None,
     }
     record = json.loads(logger_buffer.getvalue())
     assert {k: record[k] for k in partially_expected} == partially_expected
@@ -113,3 +114,14 @@ def test_log_after_call_with_message(logger_buffer: StringIO) -> None:
     my_function("some argument value")
     record = json.loads(logger_buffer.getvalue())
     assert record["message"] == "new_message"
+
+
+def test_log_after_call_with_exception(logger_buffer: StringIO) -> None:
+    @log_after_call(log_exceptions=True)
+    def my_function() -> None:
+        raise RuntimeError("some exception string")
+
+    with pytest.raises(RuntimeError):
+        my_function()
+    record = json.loads(logger_buffer.getvalue())
+    assert record["exc_str"] == "some exception string"
