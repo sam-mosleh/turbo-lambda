@@ -109,7 +109,7 @@ def log_after_call[**P, T](
     log_level: int = logging.INFO,
     log_message: str = "call",
     excluded_fields: Iterable[str] = ("self", "context"),
-    result_extractor: Callable[[T], dict[str, Any]] = lambda _: {},
+    result_extractor: Callable[[Any], dict[str, Any]] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
@@ -118,7 +118,7 @@ def log_after_call[**P, T](
     log_level: int = logging.INFO,
     log_message: str = "call",
     excluded_fields: Iterable[str] = ("self", "context"),
-    result_extractor: Callable[[T], dict[str, Any]] = lambda _: {},
+    result_extractor: Callable[[Any], dict[str, Any]] | None = None,
 ) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         sig = inspect.signature(func)
@@ -138,7 +138,8 @@ def log_after_call[**P, T](
             st = time.monotonic()
             try:
                 result = func(*f_args, **f_kwargs)
-                extra.update(result_extractor(result))
+                if result_extractor:
+                    extra.update(result_extractor(result))
                 return result
             except Exception:
                 exc_info = True

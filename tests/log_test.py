@@ -103,3 +103,13 @@ def test_log_after_call_with_parameters(logger_buffer: StringIO) -> None:
     record = json.loads(logger_buffer.getvalue())
     assert not record["arguments"]
     assert record["some_key"] == 1
+
+
+def test_log_after_call_with_message(logger_buffer: StringIO) -> None:
+    @log_after_call(log_message="new_message")
+    def my_function(a: str) -> int:
+        return 1
+
+    my_function("some argument value")
+    record = json.loads(logger_buffer.getvalue())
+    assert record["message"] == "new_message"

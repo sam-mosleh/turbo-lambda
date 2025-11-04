@@ -147,14 +147,15 @@ def test_invalid_event() -> None:
     assert exc.value.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
-def test_error_transformer_raise() -> None:
-    def raise_unauthorized(error: errors.GeneralError) -> None:
-        raise errors.UnauthorizedError() from error
+def _raise_unauthorized_from_general_error(error: errors.GeneralError) -> int:
+    raise errors.UnauthorizedError() from error
 
-    @error_transformer_handler(raise_unauthorized)
+
+def test_error_transformer_raise() -> None:
+    @error_transformer_handler(_raise_unauthorized_from_general_error)
     def handler(
         event: schemas.EventType, context: schemas.LambdaContextProtocol
-    ) -> None:
+    ) -> int:
         raise errors.GeneralError(status_code=HTTPStatus.BAD_REQUEST, detail="")
 
     with pytest.raises(errors.UnauthorizedError):
@@ -165,9 +166,7 @@ def test_error_transformer_raise() -> None:
 
 
 def test_error_transformer_return() -> None:
-    def error_handler(error: Exception) -> int: ...  # type: ignore[empty-body]
-
-    @error_transformer_handler(error_handler)
+    @error_transformer_handler(_raise_unauthorized_from_general_error)
     def handler(
         event: schemas.EventType, context: schemas.LambdaContextProtocol
     ) -> int:
