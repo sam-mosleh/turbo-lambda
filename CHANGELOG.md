@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.4.1 (2025-11-05)
+
+### Fix
+
+* 🐛 Fix decorators logging type hints and usage ([`ab95be9`](https://github.com/sam-mosleh/turbo-lambda/commit/ab95be94c78909fb0362c99fba4096667f967c3e))
+
 ## v0.4.0 (2025-11-04)
 
 ### Feature
