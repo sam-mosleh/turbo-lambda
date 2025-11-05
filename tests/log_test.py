@@ -125,3 +125,16 @@ def test_log_after_call_with_exception(logger_buffer: StringIO) -> None:
         my_function()
     record = json.loads(logger_buffer.getvalue())
     assert record["exc_str"] == "some exception string"
+
+
+def test_log_after_call_with_extractor(logger_buffer: StringIO) -> None:
+    def extractor(ret: int) -> dict[str, Any]:
+        return {"ret": ret}
+
+    @log_after_call(result_extractor=extractor)
+    def my_function() -> int:
+        return 1
+
+    my_function()
+    record = json.loads(logger_buffer.getvalue())
+    assert record["ret"] == 1

@@ -11,6 +11,7 @@ import pydantic
 
 from turbo_lambda import schemas
 from turbo_lambda.errors import (
+    GeneralError,
     RequestValidationError,
     general_error_to_gateway_response,
 )
@@ -119,7 +120,7 @@ def request_logger_handler[ResponseT](
     @log_after_call(
         log_level=logging.DEBUG,
         log_message="request",
-        result_extractor=lambda _: {},  # TODO: Remove after mypy fix
+        log_exceptions=True,
     )
     @wraps(func)
     def handler(
@@ -155,6 +156,7 @@ def gateway_handler[RequestT: pydantic.BaseModel](
     @log_after_call(
         log_level=logging.DEBUG,
         log_message="request",
+        log_exceptions=True,
         result_extractor=result_extractor,
     )
     @error_transformer_handler(general_error_to_gateway_response)
@@ -191,9 +193,15 @@ def parallel_sqs_handler[RequestT](
             rec: schemas.SqsRecordModel[schemas.OnErrorNone[RequestT]],
         ) -> schemas.LambdaCheckpointItem | None:
             if rec.body is None:
-                return schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
+                logger.warning(
+                    "sqs_message_ignored",
+                    extra={"message_id": rec.message_id},
+                )
+                return None
             try:
                 func(rec.body)
+            except GeneralError:
+                pass
             except Exception:
                 return schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
             return None

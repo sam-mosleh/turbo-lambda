@@ -183,57 +183,78 @@ def test_error_transformer_return() -> None:
 
 def test_parallel_sqs_handler() -> None:
     first_message = "some first_message"
+    second_message = "some second_message"
+    valid_schema_good_body = {
+        "messageId": "valid_schema_good_body",
+        "receiptHandle": "",
+        "body": Message(message=first_message).model_dump_json(),
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1758197089376",
+            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+            "ApproximateFirstReceiveTimestamp": "1758197089380",
+        },
+        "messageAttributes": {},
+        "md5OfBody": "",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "",
+        "awsRegion": "us-east-1",
+    }
+    valid_schema_recoverable_error_body = {
+        "messageId": "valid_schema_recoverable_error_body",
+        "receiptHandle": "",
+        "body": Message(message=second_message).model_dump_json(),
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1758197089376",
+            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+            "ApproximateFirstReceiveTimestamp": "1758197089380",
+        },
+        "messageAttributes": {},
+        "md5OfBody": "",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "",
+        "awsRegion": "us-east-1",
+    }
+    valid_schema_bad_body = {
+        "messageId": "valid_schema_bad_body",
+        "receiptHandle": "",
+        "body": Message(message="some message").model_dump_json(),
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1758197089376",
+            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+            "ApproximateFirstReceiveTimestamp": "1758197089380",
+        },
+        "messageAttributes": {},
+        "md5OfBody": "",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "",
+        "awsRegion": "us-east-1",
+    }
+    invalid_schema_body = {
+        "messageId": "invalid_schema_body",
+        "receiptHandle": "",
+        "body": "bad schema",
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1758197089376",
+            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+            "ApproximateFirstReceiveTimestamp": "1758197089380",
+        },
+        "messageAttributes": {},
+        "md5OfBody": "",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "",
+        "awsRegion": "us-east-1",
+    }
     sqs_event = schemas.EventType(
         {
             "Records": [
-                {
-                    "messageId": "someid1",
-                    "receiptHandle": "",
-                    "body": Message(message=first_message).model_dump_json(),
-                    "attributes": {
-                        "ApproximateReceiveCount": "1",
-                        "SentTimestamp": "1758197089376",
-                        "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-                        "ApproximateFirstReceiveTimestamp": "1758197089380",
-                    },
-                    "messageAttributes": {},
-                    "md5OfBody": "",
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "",
-                    "awsRegion": "us-east-1",
-                },
-                {
-                    "messageId": "someid2",
-                    "receiptHandle": "",
-                    "body": Message(message="some message").model_dump_json(),
-                    "attributes": {
-                        "ApproximateReceiveCount": "1",
-                        "SentTimestamp": "1758197089376",
-                        "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-                        "ApproximateFirstReceiveTimestamp": "1758197089380",
-                    },
-                    "messageAttributes": {},
-                    "md5OfBody": "",
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "",
-                    "awsRegion": "us-east-1",
-                },
-                {
-                    "messageId": "someid3",
-                    "receiptHandle": "",
-                    "body": "bad schema",
-                    "attributes": {
-                        "ApproximateReceiveCount": "1",
-                        "SentTimestamp": "1758197089376",
-                        "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-                        "ApproximateFirstReceiveTimestamp": "1758197089380",
-                    },
-                    "messageAttributes": {},
-                    "md5OfBody": "",
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "",
-                    "awsRegion": "us-east-1",
-                },
+                valid_schema_good_body,
+                valid_schema_recoverable_error_body,
+                valid_schema_bad_body,
+                invalid_schema_body,
             ]
         }
     )
@@ -241,12 +262,15 @@ def test_parallel_sqs_handler() -> None:
     @validated_handler
     @parallel_sqs_handler(max_workers=1)
     def handler(message_event: Annotated[Message, Json]) -> None:
-        assert message_event.message == first_message
+        if message_event.message == first_message:
+            return None
+        if message_event.message == second_message:
+            raise errors.GeneralError()
+        raise RuntimeError()
 
     assert handler(sqs_event, SampleContext()) == {
         "batchItemFailures": [
-            {"itemIdentifier": sqs_event["Records"][1]["messageId"]},
-            {"itemIdentifier": sqs_event["Records"][2]["messageId"]},
+            {"itemIdentifier": "valid_schema_bad_body"},
         ]
     }
 

@@ -110,7 +110,18 @@ def log_after_call[**P, T](
     log_message: str = "call",
     log_exceptions: bool = False,
     excluded_fields: Iterable[str] = ("self", "context"),
-    result_extractor: Callable[[Any], dict[str, Any]] | None = None,
+    result_extractor: None = None,
+) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
+
+
+@overload
+def log_after_call[**P, T](
+    *,
+    log_level: int = logging.INFO,
+    log_message: str = "call",
+    log_exceptions: bool = False,
+    excluded_fields: Iterable[str] = ("self", "context"),
+    result_extractor: Callable[[T], dict[str, Any]],
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
@@ -120,7 +131,7 @@ def log_after_call[**P, T](  # noqa: PLR0913
     log_message: str = "call",
     log_exceptions: bool = False,
     excluded_fields: Iterable[str] = ("self", "context"),
-    result_extractor: Callable[[Any], dict[str, Any]] | None = None,
+    result_extractor: Callable[[T], dict[str, Any]] | None = None,
 ) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         sig = inspect.signature(func)

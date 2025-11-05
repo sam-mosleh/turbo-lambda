@@ -24,12 +24,12 @@ class GeneralError(ApplicationError):
         detail: str = "General error",
         extensions: Any = None,
     ) -> None:
-        super().__init__()
         self.error_type = error_type
         self.status_code = status_code
         self.title = status_code.description if title is None else title
         self.detail = detail
         self.extensions = extensions
+        super().__init__(title)
 
 
 class RequestValidationError(GeneralError):
