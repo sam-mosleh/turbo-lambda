@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.5.0 (2025-11-10)
+
+### Other
+
+* 🚸 Use command arguments instead of stdin for filenames ([`8d1182c`](https://github.com/sam-mosleh/turbo-lambda/commit/8d1182c2805aaf4ed32caafbe6034d2228892379))
+
 ## v0.4.1 (2025-11-05)
 
 ### Fix
