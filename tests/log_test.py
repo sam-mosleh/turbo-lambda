@@ -124,7 +124,20 @@ def test_log_after_call_with_exception(logger_buffer: StringIO) -> None:
     with pytest.raises(RuntimeError):
         my_function()
     record = json.loads(logger_buffer.getvalue())
+    assert record["level"] == "ERROR"
     assert record["exc_str"] == "some exception string"
+
+
+def test_log_after_call_without_exception_logging(logger_buffer: StringIO) -> None:
+    @log_after_call
+    def my_function() -> None:
+        raise RuntimeError("some exception string")
+
+    with pytest.raises(RuntimeError):
+        my_function()
+    record = json.loads(logger_buffer.getvalue())
+    assert record["level"] == "INFO"
+    assert record["exc_str"] is None
 
 
 def test_log_after_call_with_extractor(logger_buffer: StringIO) -> None:

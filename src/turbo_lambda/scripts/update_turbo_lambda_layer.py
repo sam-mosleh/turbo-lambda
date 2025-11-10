@@ -1,11 +1,16 @@
+import argparse
 import re
-import sys
-from typing import TextIO
+from collections.abc import Sequence
 
 from turbo_lambda.version import __version__
 
 
-def main(version: str = __version__, input_io: TextIO = sys.stdin) -> int:
+def main(version: str = __version__, argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Update all the turbo-lambda layer versions"
+    )
+    parser.add_argument("filenames", nargs="*")
+    args = parser.parse_args(argv)
     dashed_version = version.replace(".", "-")
     pattern = re.compile(
         r"arn:aws:lambda:(.*):\d+:layer:turbo_lambda-\d+-\d+-\d+-(.*)-(.*):1"
@@ -13,8 +18,8 @@ def main(version: str = __version__, input_io: TextIO = sys.stdin) -> int:
     replacement = (
         rf"arn:aws:lambda:\1:099532377432:layer:turbo_lambda-{dashed_version}-\2-\3:1"
     )
-    filenames = [filename.strip() for filename in input_io]
-    for filename in filenames:
+    exit_code = 0
+    for filename in args.filenames:
         try:
             with open(filename) as fp:
                 content = fp.read()
@@ -26,7 +31,8 @@ def main(version: str = __version__, input_io: TextIO = sys.stdin) -> int:
         new_content = pattern.sub(replacement, content)
         with open(filename, "w") as fp:
             fp.write(new_content)
-    return 0
+        exit_code = 1
+    return exit_code
 
 
 if __name__ == "__main__":
