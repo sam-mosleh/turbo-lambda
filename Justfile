@@ -79,6 +79,7 @@ _psr *args:
 release *args:
     @just _psr -v version {{ args }}
     uv publish
+    just publish
 
 # Check release output
 [group('lifecycle')]
