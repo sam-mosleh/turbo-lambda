@@ -18,9 +18,9 @@ _cov *args:
     just _cov erase
     just _cov run -m pytest
     just _cov combine
-    just _cov report {{ args }}
     just _cov xml
     just _cov html
+    just _cov report {{ args }}
 
 # Run linters
 [group('qa')]
@@ -116,7 +116,7 @@ _publish_layer_version region python_platform python_version:
     aws lambda publish-layer-version \
         --region {{ region }} \
         --layer-name $(just _layer_name {{ python_platform }} {{ python_version }}) \
-        --description 'My testing layer for shared libraries' \
+        --description 'TurboLambda layer' \
         --compatible-runtimes python{{ python_version }} \
         --compatible-architectures {{ python_platform }} \
         --license-info MIT-0 \

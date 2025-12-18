@@ -5,10 +5,18 @@ description = "Turbo Lambda Description"
 readme = "README.md"
 authors = [{ name = "Sam Mosleh", email = "sam.mosleh.d@gmail.com" }]
 requires-python = ">=3.12"
-dependencies = ["orjson>=3.11.3", "pydantic-settings>=2.11.0"]
+dependencies = [
+    "opentelemetry-api>=1.39.1",
+    "pydantic-settings>=2.11.0",
+]
 
 [dependency-groups]
-dev = ["coverage>=7.11.0", "ipykernel>=7.0.1", "mypy>=1.18.2", "pytest>=8.4.2"]
+dev = [
+    "coverage>=7.11.0",
+    "ipykernel>=7.0.1",
+    "mypy>=1.18.2",
+    "pytest>=8.4.2",
+]
 
 [project.scripts]
 update-turbo-lambda-layer = "turbo_lambda.scripts.update_turbo_lambda_layer:main"

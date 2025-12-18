@@ -9,7 +9,18 @@ from typing import Any
 import pydantic
 import pytest
 
-from turbo_lambda.log import json_formatter, log_after_call, logger, logger_bind
+from turbo_lambda.log import _json_custom_default, log_after_call, logger, logger_bind
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        record.message = record.getMessage()
+        if record.exc_info and record.exc_text is None:
+            record.exc_text = self.formatException(record.exc_info)
+        if record.stack_info:
+            record.stack_info = self.formatStack(record.stack_info)
+        record_dict = {k: v for k, v in vars(record).items() if k not in {"exc_info"}}
+        return json.dumps(record_dict, default=_json_custom_default)
 
 
 class SampleClass:
@@ -24,8 +35,9 @@ class SampleClass:
 def logger_buffer() -> Generator[StringIO, None, None]:
     buffer = StringIO()
     handler = logging.StreamHandler(buffer)
-    handler.setFormatter(json_formatter)
+    handler.setFormatter(JsonFormatter())
     logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
     try:
         yield buffer
     finally:
@@ -69,7 +81,7 @@ def test_logging_exceptions(logger_buffer: StringIO) -> None:
         logger.exception("error occured", stack_info=True)
 
     record = json.loads(logger_buffer.getvalue())
-    assert "ZeroDivisionError" in record["exc_info"]
+    assert "ZeroDivisionError" in record["exc_text"]
 
 
 def test_log_after_call_without_args(logger_buffer: StringIO) -> None:
@@ -124,7 +136,7 @@ def test_log_after_call_with_exception(logger_buffer: StringIO) -> None:
     with pytest.raises(RuntimeError):
         my_function()
     record = json.loads(logger_buffer.getvalue())
-    assert record["level"] == "ERROR"
+    assert record["levelname"] == "ERROR"
     assert record["exc_str"] == "some exception string"
 
 
@@ -136,7 +148,7 @@ def test_log_after_call_without_exception_logging(logger_buffer: StringIO) -> No
     with pytest.raises(RuntimeError):
         my_function()
     record = json.loads(logger_buffer.getvalue())
-    assert record["level"] == "INFO"
+    assert record["levelname"] == "INFO"
     assert record["exc_str"] is None
 
 

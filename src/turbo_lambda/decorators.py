@@ -8,6 +8,7 @@ from types import TracebackType
 from typing import Any, Protocol, overload
 
 import pydantic
+from opentelemetry.trace import get_current_span
 
 from turbo_lambda import schemas
 from turbo_lambda.errors import (
@@ -107,6 +108,7 @@ def request_logger_handler[ResponseT](
     def bind_extractor(
         event: schemas.EventType, context: schemas.LambdaContextProtocol
     ) -> AbstractContextManager[None]:
+        ctx = get_current_span().get_span_context()
         return logger_bind(
             lambda_context={
                 "name": context.function_name,
@@ -114,6 +116,9 @@ def request_logger_handler[ResponseT](
                 "arn": context.invoked_function_arn,
                 "request_id": context.aws_request_id,
             },
+            trace_id=format(ctx.trace_id, "032x"),
+            span_id=format(ctx.span_id, "016x"),
+            trace_sampled=ctx.trace_flags.sampled,
         )
 
     @context_manager_middleware(bind_extractor)
@@ -137,6 +142,7 @@ def gateway_handler[RequestT: pydantic.BaseModel](
     def bind_extractor(
         event: schemas.EventType, context: schemas.LambdaContextProtocol
     ) -> AbstractContextManager[None]:
+        ctx = get_current_span().get_span_context()
         return logger_bind(
             lambda_context={
                 "name": context.function_name,
@@ -145,6 +151,9 @@ def gateway_handler[RequestT: pydantic.BaseModel](
                 "request_id": context.aws_request_id,
             },
             correlation_id=event["requestContext"].get("requestId"),
+            trace_id=format(ctx.trace_id, "032x"),
+            span_id=format(ctx.span_id, "016x"),
+            trace_sampled=ctx.trace_flags.sampled,
         )
 
     def result_extractor(
