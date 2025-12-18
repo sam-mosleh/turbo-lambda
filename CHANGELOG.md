@@ -1,6 +1,18 @@
 
 # CHANGELOG
 
+## v0.6.0 (2025-12-18)
+
+### Other
+
+* ⬆️ Update dependencies ([`49a94d4`](https://github.com/sam-mosleh/turbo-lambda/commit/49a94d4ebfc348c0d6828ed60c63856a40eec8fc))
+
+* 🧑‍💻 Add layer publish to the release command ([`b85742f`](https://github.com/sam-mosleh/turbo-lambda/commit/b85742f26afb2ae43563a1b460871dc32297900c))
+
+### Feature
+
+* ✨ Add support for OpenTelemetry ([`b04c547`](https://github.com/sam-mosleh/turbo-lambda/commit/b04c547bd84626571c8ad2f15a38f9665c7957b2))
+
 ## v0.5.0 (2025-11-10)
 
 ### Other

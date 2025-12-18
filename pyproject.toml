@@ -1,6 +1,6 @@
 [project]
 name = "turbo-lambda"
-version = "0.5.0"
+version = "0.6.0"
 description = "Turbo Lambda Description"
 readme = "README.md"
 authors = [{ name = "Sam Mosleh", email = "sam.mosleh.d@gmail.com" }]
