@@ -1,6 +1,14 @@
 
 # CHANGELOG
 
+## v0.6.1 (2026-01-01)
+
+### Other
+
+* ⬆️ Update dependencies ([`ad6848c`](https://github.com/sam-mosleh/turbo-lambda/commit/ad6848c9ad4b22b595d20586967efebfc4caf2f4))
+
+* 📦️ Relax opentelemetry-api version constraint ([`c390736`](https://github.com/sam-mosleh/turbo-lambda/commit/c390736dccd5a853cfcefca6f3041872670b71f3))
+
 ## v0.6.0 (2025-12-18)
 
 ### Other

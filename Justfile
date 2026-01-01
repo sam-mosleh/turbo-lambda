@@ -74,18 +74,6 @@ _psr *args:
     GIT_COMMIT_AUTHOR="$(git config user.name) <$(git config user.email)>" \
     uvx --from=python-semantic-release semantic-release {{ args }}
 
-# Release project
-[group('lifecycle')]
-release *args:
-    @just _psr -v version {{ args }}
-    uv publish
-    just publish
-
-# Check release output
-[group('lifecycle')]
-release-check *args:
-    @just _psr -vv --noop version {{ args }}
-
 _build_zip python_platform python_version:
     uv pip install \
         --refresh \
@@ -97,9 +85,7 @@ _build_zip python_platform python_version:
         --requirement ./build/requirements.txt
     cd ./build/opt-{{ python_platform }}-{{ python_version }} && uvx --from deterministic-zip-go deterministic-zip -r ../opt-{{ python_platform }}-{{ python_version }}.zip .
 
-# Build layer
-[group('lifecycle')]
-build:
+_build_layers:
     rm -rf build
     mkdir build
     uv sync
@@ -111,7 +97,7 @@ build:
     done
 
 _layer_name python_platform python_version:
-    @echo turbo_lambda-{{ replace(`uv version --short`, '.', '-')}}-{{ python_platform }}-python{{ replace(python_version, '.', '') }}
+    @echo turbo_lambda-{{ replace(`uv version --short`, '.', '-') }}-{{ python_platform }}-python{{ replace(python_version, '.', '') }}
 
 _publish_layer_version region python_platform python_version:
     aws lambda publish-layer-version \
@@ -134,11 +120,24 @@ _add_layer_version_permission region python_platform python_version:
         --action lambda:GetLayerVersion \
         --principal '*'
 
-# Publish layer
-[group('lifecycle')]
-publish: build
+_publish_layers: _build_layers
     @for python_platform in {{ PYTHON_PLATFORMS }}; do \
         for python_version in {{ PYTHON_VERSIONS }}; do \
             just _add_layer_version_permission us-east-1 $python_platform $python_version; \
         done \
     done
+
+_publish_package:
+    uv publish
+
+# Check release output
+[group('lifecycle')]
+@release-check *args:
+    just _psr -vv --noop version {{ args }}
+
+# Release project
+[group('lifecycle')]
+@release *args:
+    just _psr -v version {{ args }}
+    just _publish_package
+    just _publish_layers
