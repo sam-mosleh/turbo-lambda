@@ -1,7 +1,7 @@
 import pydantic
 import pytest
 
-from turbo_lambda.schemas import RouteARN, RouteARNStr
+from turbo_lambda.schemas import PagedResponse, RouteARN, RouteARNStr
 
 
 def test_route_arn() -> None:
@@ -27,3 +27,18 @@ def test_route_arn() -> None:
         resource_path="myroute/abc",
     )
     assert data.model_dump() == {"arn": route_arn_str}
+
+
+def test_paged_response_links() -> None:
+    class Item(pydantic.BaseModel):
+        a: int
+
+    class Params(pydantic.BaseModel):
+        b: int
+
+    assert (
+        PagedResponse[Item, Params](items=[], next_key=Params(b=1)).to_link_header(
+            "/abc"
+        )
+        == '</abc?b=1>; rel="next"'
+    )

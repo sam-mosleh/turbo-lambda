@@ -8,7 +8,7 @@ from types import TracebackType
 from typing import Any, Protocol, overload
 
 import pydantic
-from opentelemetry.trace import get_current_span
+from opentelemetry.trace import format_span_id, format_trace_id, get_current_span
 
 from turbo_lambda import schemas
 from turbo_lambda.errors import (
@@ -151,8 +151,8 @@ def gateway_handler[RequestT: pydantic.BaseModel](
                 "request_id": context.aws_request_id,
             },
             correlation_id=event["requestContext"].get("requestId"),
-            trace_id=format(ctx.trace_id, "032x"),
-            span_id=format(ctx.span_id, "016x"),
+            trace_id=format_trace_id(ctx.trace_id),
+            span_id=format_span_id(ctx.span_id),
             trace_sampled=ctx.trace_flags.sampled,
         )
 

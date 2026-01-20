@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 import os
 import re
 from enum import Enum
@@ -12,8 +13,8 @@ from typing import (
     NewType,
     Protocol,
     TypedDict,
-    assert_never,
 )
+from urllib.parse import urlencode
 
 import annotated_types
 import pydantic
@@ -55,6 +56,10 @@ class GatewayEventQueryParameters[ParamT](pydantic.BaseModel):
     ] = None
 
 
+class GatewayEventBodyJson[ParamT](pydantic.BaseModel):
+    body: Annotated[ParamT, pydantic.Json]
+
+
 class HttpErrorResponse(pydantic.BaseModel):
     """RFC7807 Compatible schema."""
 
@@ -73,42 +78,64 @@ class ApiGatewaySerializedResponse(TypedDict):
 
 
 class ApiGatewayResponse(pydantic.BaseModel):
-    status_code: int | None = None
-    headers: dict[str, str] | None = None
-    body: pydantic.BaseModel | bytes | None
+    status_code: HTTPStatus | None = None
+    headers: dict[str, str | None] | None = None
+    body: Any
 
-    @pydantic.model_serializer
-    def serializer(self) -> ApiGatewaySerializedResponse:
+    @pydantic.model_serializer(mode="wrap")
+    def serializer(
+        self, handler: pydantic.SerializerFunctionWrapHandler
+    ) -> ApiGatewaySerializedResponse:  # pragma: no cover
+        serialized = handler(self)
+        headers: dict[str, str] = {
+            k: v for k, v in (serialized["headers"] or {}).items() if v is not None
+        }
         match self.body:
-            case pydantic.BaseModel():
-                return {
-                    "statusCode": self.status_code or HTTPStatus.OK,
-                    "headers": {"Content-Type": "application/json"}
-                    | (self.headers or {}),
-                    "body": self.body.model_dump_json(by_alias=True),
-                    "isBase64Encoded": False,
-                }
             case bytes():
                 return {
-                    "statusCode": self.status_code or HTTPStatus.OK,
-                    "headers": {"Content-Type": "application/octet-stream"}
-                    | (self.headers or {}),
+                    "statusCode": serialized["status_code"] or HTTPStatus.OK,
+                    "headers": {"Content-Type": "application/octet-stream"} | headers,
                     "body": base64.b64encode(self.body).decode(),
                     "isBase64Encoded": True,
                 }
             case None:
                 return {
-                    "statusCode": self.status_code or HTTPStatus.NO_CONTENT,
-                    "headers": (self.headers or {}),
+                    "statusCode": serialized["status_code"] or HTTPStatus.NO_CONTENT,
+                    "headers": headers,
                     "body": None,
                     "isBase64Encoded": False,
                 }
             case _:
-                assert_never(self.body)
+                return {
+                    "statusCode": serialized["status_code"] or HTTPStatus.OK,
+                    "headers": {"Content-Type": "application/json"} | headers,
+                    "body": json.dumps(serialized["body"], separators=(",", ":")),
+                    "isBase64Encoded": False,
+                }
 
     if TYPE_CHECKING:
 
         def model_dump(self) -> ApiGatewaySerializedResponse: ...  # type: ignore[override]
+
+
+class PagedResponse[ItemT: pydantic.BaseModel, ParamsT: pydantic.BaseModel](
+    pydantic.BaseModel
+):
+    items: list[ItemT]
+    next_key: ParamsT | None
+
+    def to_link_header(self, url: str) -> str | None:
+        rels = {
+            "next": urlencode(self.next_key.model_dump()) if self.next_key else None,
+        }
+        return (
+            ", ".join(
+                f'<{url}?{rel_params}>; rel="{rel_name}"'
+                for rel_name, rel_params in rels.items()
+                if rel_params is not None
+            )
+            or None
+        )
 
 
 class SqsAttributesModel(pydantic.BaseModel):
