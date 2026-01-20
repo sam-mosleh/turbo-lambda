@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.6.2 (2026-01-20)
+
+### Other
+
+* 🦺 Improve body type for ApiGatewayResponse ([`6d3ab6b`](https://github.com/sam-mosleh/turbo-lambda/commit/6d3ab6bae716fb80b43caba9ab79f6f0785b4d0f))
+
 ## v0.6.1 (2026-01-01)
 
 ### Other
