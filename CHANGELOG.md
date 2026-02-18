@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.7.0 (2026-02-19)
+
+### Other
+
+* 🚸 Improve SQS error handling ([`3ec0c83`](https://github.com/sam-mosleh/turbo-lambda/commit/3ec0c8330ae7ff289939dc5a13f22a17dbfcae11))
+
 ## v0.6.2 (2026-01-20)
 
 ### Other
