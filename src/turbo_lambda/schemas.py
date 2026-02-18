@@ -46,6 +46,10 @@ class LambdaContextProtocol(Protocol):
     aws_request_id: str
 
 
+class GatewayEventHeaders[HeaderT](pydantic.BaseModel):
+    headers: HeaderT
+
+
 class GatewayEventPathParameters[ParamT](pydantic.BaseModel):
     path_parameters: Annotated[ParamT, pydantic.Field(alias="pathParameters")]
 
@@ -541,3 +545,8 @@ class AuthorizerResponse(pydantic.BaseModel):
         AuthorizerPolicyDocument, pydantic.Field(serialization_alias="policyDocument")
     ]
     context: dict[str, str]
+
+
+class AuthorizerResponseV2(pydantic.BaseModel):
+    is_authorized: Annotated[bool, pydantic.Field(alias="isAuthorized")]
+    context: dict[str, str] = {}

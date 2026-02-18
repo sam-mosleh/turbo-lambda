@@ -14,6 +14,7 @@ from turbo_lambda.decorators import (
     gateway_handler,
     parallel_sqs_handler,
     request_logger_handler,
+    suppress,
     validated_handler,
 )
 
@@ -181,29 +182,45 @@ def test_error_transformer_return() -> None:
     )
 
 
-def test_parallel_sqs_handler() -> None:
-    first_message = "some first_message"
-    second_message = "some second_message"
-    valid_schema_good_body = {
-        "messageId": "valid_schema_good_body",
-        "receiptHandle": "",
-        "body": Message(message=first_message).model_dump_json(),
-        "attributes": {
-            "ApproximateReceiveCount": "1",
-            "SentTimestamp": "1758197089376",
-            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-            "ApproximateFirstReceiveTimestamp": "1758197089380",
-        },
-        "messageAttributes": {},
-        "md5OfBody": "",
-        "eventSource": "aws:sqs",
-        "eventSourceARN": "",
-        "awsRegion": "us-east-1",
-    }
+def test_parallel_sqs_handler_success() -> None:
+    message = "some message to test"
+    sqs_event = schemas.EventType(
+        {
+            "Records": [
+                {
+                    "messageId": "valid_schema_good_body",
+                    "receiptHandle": "",
+                    "body": Message(message=message).model_dump_json(),
+                    "attributes": {
+                        "ApproximateReceiveCount": "1",
+                        "SentTimestamp": "1758197089376",
+                        "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+                        "ApproximateFirstReceiveTimestamp": "1758197089380",
+                    },
+                    "messageAttributes": {},
+                    "md5OfBody": "",
+                    "eventSource": "aws:sqs",
+                    "eventSourceARN": "",
+                    "awsRegion": "us-east-1",
+                }
+            ]
+        }
+    )
+
+    @validated_handler
+    @parallel_sqs_handler(max_workers=1)
+    def handler(message_event: Annotated[Message, Json]) -> None:
+        assert message_event.message == message
+
+    assert handler(sqs_event, SampleContext()) == {"batchItemFailures": []}
+
+
+def test_parallel_sqs_handler_failure() -> None:
+    message = "message1"
     valid_schema_recoverable_error_body = {
         "messageId": "valid_schema_recoverable_error_body",
         "receiptHandle": "",
-        "body": Message(message=second_message).model_dump_json(),
+        "body": Message(message=message).model_dump_json(),
         "attributes": {
             "ApproximateReceiveCount": "1",
             "SentTimestamp": "1758197089376",
@@ -219,7 +236,7 @@ def test_parallel_sqs_handler() -> None:
     valid_schema_bad_body = {
         "messageId": "valid_schema_bad_body",
         "receiptHandle": "",
-        "body": Message(message="some message").model_dump_json(),
+        "body": Message(message="message2").model_dump_json(),
         "attributes": {
             "ApproximateReceiveCount": "1",
             "SentTimestamp": "1758197089376",
@@ -251,7 +268,6 @@ def test_parallel_sqs_handler() -> None:
     sqs_event = schemas.EventType(
         {
             "Records": [
-                valid_schema_good_body,
                 valid_schema_recoverable_error_body,
                 valid_schema_bad_body,
                 invalid_schema_body,
@@ -261,10 +277,9 @@ def test_parallel_sqs_handler() -> None:
 
     @validated_handler
     @parallel_sqs_handler(max_workers=1)
+    @suppress(errors.GeneralError)
     def handler(message_event: Annotated[Message, Json]) -> None:
-        if message_event.message == first_message:
-            return None
-        if message_event.message == second_message:
+        if message_event.message == message:
             raise errors.GeneralError()
         raise RuntimeError()
 

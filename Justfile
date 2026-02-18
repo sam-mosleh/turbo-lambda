@@ -1,4 +1,5 @@
-PYTHON_VERSIONS := "3.12 3.13"
+REGIONS := "us-east-1 eu-central-1"
+PYTHON_VERSIONS := "3.12 3.13 3.14"
 PYTHON_PLATFORMS := "x86_64 arm64"
 
 @_:
@@ -121,11 +122,13 @@ _add_layer_version_permission region python_platform python_version:
         --principal '*'
 
 _publish_layers: _build_layers
-    @for python_platform in {{ PYTHON_PLATFORMS }}; do \
-        for python_version in {{ PYTHON_VERSIONS }}; do \
-            just _add_layer_version_permission us-east-1 $python_platform $python_version; \
+    @for region in {{ REGIONS }}; do \
+        for python_platform in {{ PYTHON_PLATFORMS }}; do \
+            for python_version in {{ PYTHON_VERSIONS }}; do \
+                echo $region $python_platform $python_version; \
+            done \
         done \
-    done
+    done | xargs -P16 -L1 sh -c 'just _add_layer_version_permission $0 $1 $2'
 
 _publish_package:
     uv publish

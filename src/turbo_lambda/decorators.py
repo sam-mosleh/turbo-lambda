@@ -2,7 +2,8 @@ import inspect
 import logging
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, ContextDecorator
+from contextlib import suppress as contextlib_suppress
 from functools import wraps
 from types import TracebackType
 from typing import Any, Protocol, overload
@@ -12,7 +13,6 @@ from opentelemetry.trace import format_span_id, format_trace_id, get_current_spa
 
 from turbo_lambda import schemas
 from turbo_lambda.errors import (
-    GeneralError,
     RequestValidationError,
     general_error_to_gateway_response,
 )
@@ -199,18 +199,10 @@ def parallel_sqs_handler[RequestT](
         ).annotation
 
         def single_record_processor(
-            rec: schemas.SqsRecordModel[schemas.OnErrorNone[RequestT]],
+            rec: schemas.SqsRecordModel[RequestT],
         ) -> schemas.LambdaCheckpointItem | None:
-            if rec.body is None:
-                logger.warning(
-                    "sqs_message_ignored",
-                    extra={"message_id": rec.message_id},
-                )
-                return None
             try:
                 func(rec.body)
-            except GeneralError:
-                pass
             except Exception:
                 return schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
             return None
@@ -218,8 +210,19 @@ def parallel_sqs_handler[RequestT](
         def wrapper(
             event: schemas.SqsEvent[schemas.OnErrorNone[request_type]],  # type: ignore[valid-type]
         ) -> schemas.LambdaCheckpointResponse:
+            ignored_messages = [
+                rec.message_id for rec in event.records if rec.body is None
+            ]
+            if ignored_messages:
+                logger.warning(
+                    "sqs_message_ignored",
+                    extra={"message_ids": ignored_messages},
+                )
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                responses = executor.map(single_record_processor, event.records)
+                responses = executor.map(
+                    single_record_processor,
+                    [rec for rec in event.records if rec.body is not None],
+                )
             return schemas.LambdaCheckpointResponse(
                 batch_item_failures=[item for item in responses if item is not None]
             )
@@ -247,3 +250,7 @@ class CachedContextManager[T]:
 
     def __call__(self) -> T:
         return self._value
+
+
+class suppress(contextlib_suppress, ContextDecorator):  # noqa: N801
+    pass
