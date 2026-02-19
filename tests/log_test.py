@@ -2,7 +2,9 @@ import datetime
 import inspect
 import json
 import logging
+import uuid
 from collections.abc import Generator
+from enum import Enum
 from io import StringIO
 from typing import Any
 
@@ -53,23 +55,35 @@ def test_logger_invalid_type(logger_buffer: StringIO) -> None:
 
 
 def test_logger_bind(logger_buffer: StringIO) -> None:
+    class E(Enum):
+        A = "AA"
+        B = "BB"
+
     class SampleClass(pydantic.BaseModel):
         s: str
 
-    msg, value1, value2, value3 = (
+    msg, value1 = (
         "some message",
         "some value 1",
+    )
+    value2: list[Any] = [
         datetime.datetime.now(),
         {1, 2},
-    )
+        uuid.uuid4(),
+        E.B,
+    ]
     partially_expected = {
         "message": msg,
         "key1": {"s": value1},
-        "key2": value2.isoformat(),
-        "key3": list(value3),
+        "key2": [
+            value2[0].isoformat(),
+            list(value2[1]),
+            str(value2[2]),
+            str(E.B),
+        ],
     }
     with logger_bind(key1=SampleClass(s=value1)):
-        logger.info(msg, extra={"key2": value2, "key3": value3})
+        logger.info(msg, extra={"key2": value2})
     record = json.loads(logger_buffer.getvalue())
     assert {k: record[k] for k in partially_expected} == partially_expected
 

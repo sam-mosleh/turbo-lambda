@@ -4,7 +4,9 @@ import datetime
 import inspect
 import logging
 import time
+import uuid
 from collections.abc import Callable, Generator, Iterable
+from enum import Enum
 from functools import wraps
 from typing import Any, overload
 
@@ -38,6 +40,8 @@ def _json_custom_default(value: Any) -> Any:
             return value.model_dump(mode="json")
         case datetime.datetime() | datetime.date():
             return value.isoformat()
+        case uuid.UUID() | Enum():
+            return str(value)
         case set():
             return list(value)
         case _:
@@ -63,7 +67,7 @@ def log_after_call[**P, T](
     log_level: int = logging.INFO,
     log_message: str = "call",
     log_exceptions: bool = False,
-    excluded_fields: Iterable[str] = ("self", "context"),
+    excluded_fields: Iterable[str] = ("self",),
     result_extractor: None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
@@ -74,7 +78,7 @@ def log_after_call[**P, T](
     log_level: int = logging.INFO,
     log_message: str = "call",
     log_exceptions: bool = False,
-    excluded_fields: Iterable[str] = ("self", "context"),
+    excluded_fields: Iterable[str] = ("self",),
     result_extractor: Callable[[T], dict[str, Any]],
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
@@ -84,7 +88,7 @@ def log_after_call[**P, T](  # noqa: PLR0913
     log_level: int = logging.INFO,
     log_message: str = "call",
     log_exceptions: bool = False,
-    excluded_fields: Iterable[str] = ("self", "context"),
+    excluded_fields: Iterable[str] = ("self",),
     result_extractor: Callable[[T], dict[str, Any]] | None = None,
 ) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
     def decorator(func: Callable[P, T]) -> Callable[P, T]:

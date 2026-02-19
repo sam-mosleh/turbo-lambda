@@ -126,6 +126,7 @@ def request_logger_handler[ResponseT](
         log_level=logging.DEBUG,
         log_message="request",
         log_exceptions=True,
+        excluded_fields=("context",),
     )
     @wraps(func)
     def handler(
@@ -166,6 +167,7 @@ def gateway_handler[RequestT: pydantic.BaseModel](
         log_level=logging.DEBUG,
         log_message="request",
         log_exceptions=True,
+        excluded_fields=("context",),
         result_extractor=result_extractor,
     )
     @error_transformer_handler(general_error_to_gateway_response)
