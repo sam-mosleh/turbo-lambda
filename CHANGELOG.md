@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.7.1 (2026-02-20)
+
+### Fix
+
+* 🐛 Improve logging json encoder ([`96622f8`](https://github.com/sam-mosleh/turbo-lambda/commit/96622f8a0ad018fc111b0ab55bd0617e81e636f6))
+
 ## v0.7.0 (2026-02-19)
 
 ### Other
