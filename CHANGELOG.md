@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.8.0 (2026-02-21)
+
+### Fix
+
+* 🐛 Fix forward ref types in log_after_call ([`001467b`](https://github.com/sam-mosleh/turbo-lambda/commit/001467b603aa50fed72e0abc32fec5375dd3642f))
+
 ## v0.7.1 (2026-02-20)
 
 ### Fix
