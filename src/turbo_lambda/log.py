@@ -1,3 +1,4 @@
+import annotationlib
 import contextlib
 import contextvars
 import datetime
@@ -57,6 +58,10 @@ def _setup_logger() -> None:  # pragma: no cover
         lambda_runtime_log_utils._json_encoder.default = _json_custom_default
 
 
+def _default_result_extractor[T](res: T) -> dict[str, T]:
+    return {"result": res}
+
+
 @overload
 def log_after_call[**P, T](func: Callable[P, T]) -> Callable[P, T]: ...
 
@@ -68,7 +73,7 @@ def log_after_call[**P, T](
     log_message: str = "call",
     log_exceptions: bool = False,
     excluded_fields: Iterable[str] = ("self",),
-    result_extractor: None = None,
+    result_extractor: bool = False,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
@@ -89,10 +94,17 @@ def log_after_call[**P, T](  # noqa: PLR0913
     log_message: str = "call",
     log_exceptions: bool = False,
     excluded_fields: Iterable[str] = ("self",),
-    result_extractor: Callable[[T], dict[str, Any]] | None = None,
+    result_extractor: Callable[[T], dict[str, Any]] | bool = False,
 ) -> Callable[P, T] | Callable[[Callable[P, T]], Callable[P, T]]:
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
-        sig = inspect.signature(func)
+        sig = inspect.signature(func, annotation_format=annotationlib.Format.STRING)
+        result_extractor_func = (
+            result_extractor
+            if callable(result_extractor)
+            else _default_result_extractor
+            if result_extractor
+            else None
+        )
 
         @wraps(func)
         def wrapper(*f_args: P.args, **f_kwargs: P.kwargs) -> T:
@@ -110,8 +122,8 @@ def log_after_call[**P, T](  # noqa: PLR0913
             st = time.monotonic()
             try:
                 result = func(*f_args, **f_kwargs)
-                if result_extractor:
-                    extra.update(result_extractor(result))
+                if result_extractor_func:
+                    extra.update(result_extractor_func(result))
                 return result
             except Exception as e:
                 if log_exceptions:

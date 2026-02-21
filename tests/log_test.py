@@ -34,7 +34,7 @@ class SampleClass:
 
 
 @pytest.fixture
-def logger_buffer() -> Generator[StringIO, None, None]:
+def logger_buffer() -> Generator[StringIO]:
     buffer = StringIO()
     handler = logging.StreamHandler(buffer)
     handler.setFormatter(JsonFormatter())
@@ -167,13 +167,10 @@ def test_log_after_call_without_exception_logging(logger_buffer: StringIO) -> No
 
 
 def test_log_after_call_with_extractor(logger_buffer: StringIO) -> None:
-    def extractor(ret: int) -> dict[str, Any]:
-        return {"ret": ret}
-
-    @log_after_call(result_extractor=extractor)
+    @log_after_call(result_extractor=True)
     def my_function() -> int:
         return 1
 
     my_function()
     record = json.loads(logger_buffer.getvalue())
-    assert record["ret"] == 1
+    assert record["result"] == 1

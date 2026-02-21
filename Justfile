@@ -128,7 +128,7 @@ _publish_layers: _build_layers
                 echo $region $python_platform $python_version; \
             done \
         done \
-    done | xargs -P16 -L1 sh -c 'just _add_layer_version_permission $0 $1 $2'
+    done | xargs -P16 -L1 just _add_layer_version_permission
 
 _publish_package:
     uv publish
