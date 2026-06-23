@@ -1,8 +1,7 @@
 import uuid
-from collections.abc import Generator
 from contextlib import contextmanager
 from http import HTTPStatus
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import pytest
 from pydantic import BaseModel, Field, Json
@@ -17,6 +16,9 @@ from turbo_lambda.decorators import (
     suppress,
     validated_handler,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class SampleContext:

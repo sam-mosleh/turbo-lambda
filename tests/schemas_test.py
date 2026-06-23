@@ -1,6 +1,7 @@
 import pydantic
 import pytest
 
+from turbo_lambda.constants import MAX_DYNAMODB_BATCH_WRITE_ITEM  # noqa: F401
 from turbo_lambda.schemas import PagedResponse, RouteARN, RouteARNStr
 
 

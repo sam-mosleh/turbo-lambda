@@ -1,4 +1,5 @@
 import annotationlib
+import base64
 import contextlib
 import contextvars
 import datetime
@@ -6,15 +7,16 @@ import inspect
 import logging
 import time
 import uuid
-from collections.abc import Callable, Generator, Iterable
 from enum import Enum
 from functools import wraps
-from typing import Any, overload
+from typing import TYPE_CHECKING, Any, overload
 
 import pydantic
 
 from turbo_lambda.schemas import IS_LAMBDA
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterable
 LOGGING_CTX: contextvars.ContextVar[dict[str, Any]] = contextvars.ContextVar(
     "LOGGING_CTX"
 )
@@ -45,6 +47,8 @@ def _json_custom_default(value: Any) -> Any:
             return str(value)
         case set():
             return list(value)
+        case bytes():
+            return base64.b64encode(value).decode()
         case _:
             raise TypeError(value.__class__.__name__)
 

@@ -1,6 +1,9 @@
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from turbo_lambda.scripts.update_turbo_lambda_layer import main
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_multiple_files(tmp_path: Path) -> None:

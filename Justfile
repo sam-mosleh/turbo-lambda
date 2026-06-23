@@ -1,5 +1,5 @@
 REGIONS := "us-east-1 eu-central-1"
-PYTHON_VERSIONS := "3.12 3.13 3.14"
+PYTHON_VERSIONS := "3.14"
 PYTHON_PLATFORMS := "x86_64 arm64"
 
 @_:
@@ -48,6 +48,7 @@ check-all: lint typing (cov '--fail-under=100')
 [group('lifecycle')]
 update:
     uv sync --upgrade
+    docker compose pull
 
 # Initialize project for local development
 _bootstrap:
@@ -60,12 +61,14 @@ _bootstrap:
 install:
     @if ! {{ path_exists(".env") }}; then just _bootstrap; fi
     uv sync
+    docker compose up -d
 
 # Remove temporary files
 [group('lifecycle')]
 clean:
     rm -rf .venv .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov
     find . -type d -name "__pycache__" -exec rm -r {} +
+    docker compose down
 
 # Recreate project virtualenv from nothing
 [group('lifecycle')]

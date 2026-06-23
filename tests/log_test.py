@@ -3,15 +3,17 @@ import inspect
 import json
 import logging
 import uuid
-from collections.abc import Generator
 from enum import Enum
 from io import StringIO
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pydantic
 import pytest
 
 from turbo_lambda.log import _json_custom_default, log_after_call, logger, logger_bind
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class JsonFormatter(logging.Formatter):
@@ -71,6 +73,7 @@ def test_logger_bind(logger_buffer: StringIO) -> None:
         {1, 2},
         uuid.uuid4(),
         E.B,
+        b"a",
     ]
     partially_expected = {
         "message": msg,
@@ -80,6 +83,7 @@ def test_logger_bind(logger_buffer: StringIO) -> None:
             list(value2[1]),
             str(value2[2]),
             str(E.B),
+            "YQ==",
         ],
     }
     with logger_bind(key1=SampleClass(s=value1)):

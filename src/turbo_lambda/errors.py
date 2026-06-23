@@ -1,9 +1,10 @@
 from http import HTTPStatus
-from typing import Any
-
-import pydantic
+from typing import TYPE_CHECKING, Any
 
 from turbo_lambda import schemas
+
+if TYPE_CHECKING:
+    import pydantic
 
 
 class ApplicationError(Exception):

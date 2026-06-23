@@ -1,8 +1,11 @@
 import argparse
 import re
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from turbo_lambda.version import __version__
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def main(version: str = __version__, argv: Sequence[str] | None = None) -> int:

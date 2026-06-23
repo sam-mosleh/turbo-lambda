@@ -1,12 +1,10 @@
 import inspect
 import logging
-from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import AbstractContextManager, ContextDecorator
 from contextlib import suppress as contextlib_suppress
 from functools import wraps
-from types import TracebackType
-from typing import Any, Protocol, overload
+from typing import TYPE_CHECKING, Any, Protocol, overload
 
 import pydantic
 from opentelemetry.trace import format_span_id, format_trace_id, get_current_span
@@ -17,6 +15,10 @@ from turbo_lambda.errors import (
     general_error_to_gateway_response,
 )
 from turbo_lambda.log import log_after_call, logger, logger_bind
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import TracebackType
 
 
 class LambdaHandlerT[ResponseT](Protocol):
