@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.9.0 (2026-06-24)
+
+### Feature
+
+* ✨ Add sequential scan detector with psycopg ([`6595fac`](https://github.com/sam-mosleh/turbo-lambda/commit/6595facb6fafc4af096eeb6c0ae3c48a015a29b9))
+
 ## v0.8.0 (2026-02-21)
 
 ### Fix
