@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.9.2 (2026-06-24)
+
+### Other
+
+* 🎨 Move UnoptimizedQueryError to errors ([`ce4507f`](https://github.com/sam-mosleh/turbo-lambda/commit/ce4507fe3a9bee7a0a67b88b31cee238c074325b))
+
 ## v0.9.1 (2026-06-24)
 
 ### Other

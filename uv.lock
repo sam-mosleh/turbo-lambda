@@ -718,7 +718,7 @@ wheels = [
 
 [[package]]
 name = "turbo-lambda"
-version = "0.9.1"
+version = "0.9.2"
 source = { editable = "." }
 dependencies = [
     { name = "opentelemetry-api" },
