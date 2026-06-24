@@ -79,11 +79,12 @@ _psr *args:
     uvx --from=python-semantic-release semantic-release {{ args }}
 
 _build_zip python_platform python_version:
+    # Amazon Linux 2023 relies on glibc 2.34
     uv pip install \
         --refresh \
         --no-installer-metadata \
         --no-compile-bytecode \
-        --python-platform {{ if python_platform == "arm64" { "aarch64-manylinux2014" } else { "x86_64-manylinux2014" } }} \
+        --python-platform {{ if python_platform == "arm64" { "aarch64-manylinux_2_34" } else { "x86_64-manylinux_2_34" } }} \
         --python-version {{ python_version }} \
         --target ./build/opt-{{ python_platform }}-{{ python_version }}/python \
         --requirement ./build/requirements.txt
