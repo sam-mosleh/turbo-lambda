@@ -5,25 +5,13 @@ from psycopg import pq, sql
 from psycopg.raw_cursor import RawCursorMixin
 from psycopg.rows import Row
 
+from turbo_lambda.errors import UnoptimizedQueryError
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from typing import Self
 
     from psycopg.abc import Params, Query
-
-
-class UnoptimizedQueryError(Exception):
-    """Raised when a statement is planned using a sequential scan.
-
-    The detection is invisible to the interactor: every statement is planned
-    with ``EXPLAIN (FORMAT JSON)`` under the hood, so callers cannot tell that
-    the plan was inspected.
-    """
-
-    def __init__(self, query: str, plan: dict[str, Any]) -> None:
-        self.query = query
-        self.plan = plan
-        super().__init__(f"Unoptimized query uses a sequential scan: {query!r}")
 
 
 _EXPLAINABLE_COMMAND_TAGS = frozenset({"SELECT", "INSERT", "UPDATE", "DELETE"})

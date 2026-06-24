@@ -7,7 +7,8 @@ from psycopg import sql
 from psycopg.rows import dict_row
 
 from tests.utils import settings
-from turbo_lambda.psycopg import SeqScanDetectingRawCursor, UnoptimizedQueryError
+from turbo_lambda.errors import UnoptimizedQueryError
+from turbo_lambda.psycopg import SeqScanDetectingRawCursor
 
 if TYPE_CHECKING:
     from collections.abc import Generator

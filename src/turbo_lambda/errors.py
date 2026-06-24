@@ -44,6 +44,20 @@ class RequestValidationError(GeneralError):
         )
 
 
+class UnoptimizedQueryError(ApplicationError):
+    """Raised when a statement is planned using a sequential scan.
+
+    The detection is invisible to the interactor: every statement is planned
+    with ``EXPLAIN (FORMAT JSON)`` under the hood, so callers cannot tell that
+    the plan was inspected.
+    """
+
+    def __init__(self, query: str, plan: dict[str, Any]) -> None:
+        self.query = query
+        self.plan = plan
+        super().__init__(f"Unoptimized query uses a sequential scan: {query!r}")
+
+
 def general_error_to_gateway_response(
     error: GeneralError,
 ) -> schemas.ApiGatewaySerializedResponse:
