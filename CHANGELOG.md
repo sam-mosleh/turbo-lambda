@@ -1,6 +1,12 @@
 
 # CHANGELOG
 
+## v0.9.1 (2026-06-24)
+
+### Other
+
+* 📌 Pin Python platform to Amazon Linux 2023 ([`39c8b1d`](https://github.com/sam-mosleh/turbo-lambda/commit/39c8b1decae40c3b452f53f6e0627bd4caa64c31))
+
 ## v0.9.0 (2026-06-24)
 
 ### Feature
