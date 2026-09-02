@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import AbstractContextManager, ContextDecorator
 from contextlib import suppress as contextlib_suppress
-from functools import wraps
+from functools import partial, wraps
 from typing import TYPE_CHECKING, Any, Protocol, overload
 
 import pydantic
@@ -181,6 +181,24 @@ def gateway_handler[RequestT: pydantic.BaseModel](
     return handler
 
 
+def _process_sqs_records[RequestT](
+    func: Callable[[RequestT], None],
+    records: list[schemas.SqsRecordModel[RequestT | None]],
+) -> list[schemas.LambdaCheckpointItem]:
+    first_failure_index = len(records)
+    for idx, rec in enumerate(records):
+        if rec.body is not None:
+            try:
+                func(rec.body)
+            except Exception:
+                first_failure_index = idx
+                break
+    return [
+        schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
+        for rec in records[first_failure_index:]
+    ]
+
+
 def parallel_sqs_handler[RequestT](
     *,
     max_workers: int,
@@ -202,33 +220,37 @@ def parallel_sqs_handler[RequestT](
             iter(func_annotations.parameters.values())
         ).annotation
 
-        def single_record_processor(
-            rec: schemas.SqsRecordModel[RequestT],
-        ) -> schemas.LambdaCheckpointItem | None:
-            try:
-                func(rec.body)
-            except Exception:
-                return schemas.LambdaCheckpointItem(item_identifier=rec.message_id)
-            return None
-
         def wrapper(
             event: schemas.SqsEvent[schemas.OnErrorNone[request_type]],  # type: ignore[valid-type]
         ) -> schemas.LambdaCheckpointResponse:
-            ignored_messages = [
+            if unable_to_parse_messages := [
                 rec.message_id for rec in event.records if rec.body is None
-            ]
-            if ignored_messages:
+            ]:
                 logger.warning(
-                    "sqs_message_ignored",
-                    extra={"message_ids": ignored_messages},
+                    "sqs_message_unable_to_parse",
+                    extra={"message_ids": unable_to_parse_messages},
                 )
+            groups: dict[
+                str,
+                list[schemas.SqsRecordModel[RequestT | None]],
+            ] = {}
+            for rec in event.records:
+                if rec.attributes.message_group_id is not None:
+                    groups.setdefault(rec.attributes.message_group_id, []).append(rec)
+            records_grouped = [
+                [rec]
+                for rec in event.records
+                if rec.attributes.message_group_id is None
+            ]
+            records_grouped.extend(groups.values())
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                responses = executor.map(
-                    single_record_processor,
-                    [rec for rec in event.records if rec.body is not None],
+                group_responses = executor.map(
+                    partial(_process_sqs_records, func), records_grouped
                 )
             return schemas.LambdaCheckpointResponse(
-                batch_item_failures=[item for item in responses if item is not None]
+                batch_item_failures=[
+                    item for group in group_responses for item in group
+                ]
             )
 
         return wrapper

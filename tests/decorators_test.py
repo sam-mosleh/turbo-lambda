@@ -184,27 +184,37 @@ def test_error_transformer_return() -> None:
     )
 
 
+def _generate_sqs_record(
+    message_id: str, body: str, group_id: str | None = None
+) -> dict[str, object]:
+    return {
+        "messageId": message_id,
+        "receiptHandle": "",
+        "body": body,
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1758197089376",
+            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
+            "ApproximateFirstReceiveTimestamp": "1758197089380",
+            "MessageGroupId": group_id,
+        },
+        "messageAttributes": {},
+        "md5OfBody": "",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "",
+        "awsRegion": "us-east-1",
+    }
+
+
 def test_parallel_sqs_handler_success() -> None:
     message = "some message to test"
     sqs_event = schemas.EventType(
         {
             "Records": [
-                {
-                    "messageId": "valid_schema_good_body",
-                    "receiptHandle": "",
-                    "body": Message(message=message).model_dump_json(),
-                    "attributes": {
-                        "ApproximateReceiveCount": "1",
-                        "SentTimestamp": "1758197089376",
-                        "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-                        "ApproximateFirstReceiveTimestamp": "1758197089380",
-                    },
-                    "messageAttributes": {},
-                    "md5OfBody": "",
-                    "eventSource": "aws:sqs",
-                    "eventSourceARN": "",
-                    "awsRegion": "us-east-1",
-                }
+                _generate_sqs_record(
+                    message_id="valid_schema_good_body",
+                    body=Message(message=message).model_dump_json(),
+                )
             ]
         }
     )
@@ -219,60 +229,20 @@ def test_parallel_sqs_handler_success() -> None:
 
 def test_parallel_sqs_handler_failure() -> None:
     message = "message1"
-    valid_schema_recoverable_error_body = {
-        "messageId": "valid_schema_recoverable_error_body",
-        "receiptHandle": "",
-        "body": Message(message=message).model_dump_json(),
-        "attributes": {
-            "ApproximateReceiveCount": "1",
-            "SentTimestamp": "1758197089376",
-            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-            "ApproximateFirstReceiveTimestamp": "1758197089380",
-        },
-        "messageAttributes": {},
-        "md5OfBody": "",
-        "eventSource": "aws:sqs",
-        "eventSourceARN": "",
-        "awsRegion": "us-east-1",
-    }
-    valid_schema_bad_body = {
-        "messageId": "valid_schema_bad_body",
-        "receiptHandle": "",
-        "body": Message(message="message2").model_dump_json(),
-        "attributes": {
-            "ApproximateReceiveCount": "1",
-            "SentTimestamp": "1758197089376",
-            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-            "ApproximateFirstReceiveTimestamp": "1758197089380",
-        },
-        "messageAttributes": {},
-        "md5OfBody": "",
-        "eventSource": "aws:sqs",
-        "eventSourceARN": "",
-        "awsRegion": "us-east-1",
-    }
-    invalid_schema_body = {
-        "messageId": "invalid_schema_body",
-        "receiptHandle": "",
-        "body": "bad schema",
-        "attributes": {
-            "ApproximateReceiveCount": "1",
-            "SentTimestamp": "1758197089376",
-            "SenderId": "AROA4BY23KGPOJ2IHSVCD:a89b997ffa993552a059e02d14416754",
-            "ApproximateFirstReceiveTimestamp": "1758197089380",
-        },
-        "messageAttributes": {},
-        "md5OfBody": "",
-        "eventSource": "aws:sqs",
-        "eventSourceARN": "",
-        "awsRegion": "us-east-1",
-    }
     sqs_event = schemas.EventType(
         {
             "Records": [
-                valid_schema_recoverable_error_body,
-                valid_schema_bad_body,
-                invalid_schema_body,
+                _generate_sqs_record(
+                    message_id="valid_schema_recoverable_error_body",
+                    body=Message(message=message).model_dump_json(),
+                ),
+                _generate_sqs_record(
+                    message_id="valid_schema_bad_body",
+                    body=Message(message="message2").model_dump_json(),
+                ),
+                _generate_sqs_record(
+                    message_id="invalid_schema_body", body="bad schema"
+                ),
             ]
         }
     )
@@ -290,6 +260,52 @@ def test_parallel_sqs_handler_failure() -> None:
             {"itemIdentifier": "valid_schema_bad_body"},
         ]
     }
+
+
+def test_parallel_sqs_handler_skips_same_group_after_error() -> None:
+    processed: list[str] = []
+    sqs_event = schemas.EventType(
+        {
+            "Records": [
+                _generate_sqs_record(
+                    message_id="group_a_error",
+                    body=Message(message="fail").model_dump_json(),
+                    group_id="group-a",
+                ),
+                _generate_sqs_record(
+                    message_id="group_b_ok",
+                    body=Message(message="ok").model_dump_json(),
+                    group_id="group-b",
+                ),
+                _generate_sqs_record(
+                    message_id="group_a_unprocessed",
+                    body=Message(message="skip-me").model_dump_json(),
+                    group_id="group-a",
+                ),
+                _generate_sqs_record(
+                    message_id="group_a_invalid_unprocessed",
+                    body="",
+                    group_id="group-a",
+                ),
+            ]
+        }
+    )
+
+    @validated_handler
+    @parallel_sqs_handler(max_workers=1)
+    def handler(message_event: Annotated[Message, Json]) -> None:
+        processed.append(message_event.message)
+        if message_event.message == "fail":
+            raise RuntimeError()
+
+    assert handler(sqs_event, SampleContext()) == {
+        "batchItemFailures": [
+            {"itemIdentifier": "group_a_error"},
+            {"itemIdentifier": "group_a_unprocessed"},
+            {"itemIdentifier": "group_a_invalid_unprocessed"},
+        ]
+    }
+    assert processed == ["fail", "ok"]
 
 
 def test_cached_context_manager() -> None:
