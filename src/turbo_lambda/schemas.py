@@ -119,7 +119,9 @@ class ApiGatewayResponse(pydantic.BaseModel):
 
     if TYPE_CHECKING:
 
-        def model_dump(self) -> ApiGatewaySerializedResponse: ...  # type: ignore[override]
+        def model_dump(  # type: ignore[override]
+            self, *, mode: Literal["json", "python"] = "python"
+        ) -> ApiGatewaySerializedResponse: ...
 
 
 class PagedResponse[ItemT: pydantic.BaseModel, ParamsT: pydantic.BaseModel](

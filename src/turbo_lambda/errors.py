@@ -71,4 +71,4 @@ def general_error_to_gateway_response(
             detail=error.detail,
             extensions=error.extensions,
         ),
-    ).model_dump()
+    ).model_dump(mode="json")

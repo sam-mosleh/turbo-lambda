@@ -92,7 +92,7 @@ def log_after_call[**P, T](
 ) -> Callable[[Callable[P, T]], Callable[P, T]]: ...
 
 
-def log_after_call[**P, T](  # noqa: PLR0913
+def log_after_call[**P, T](  # noqa: PLR0913 PLR0917
     func: Callable[P, T] | None = None,
     log_level: int = logging.INFO,
     log_message: str = "call",
