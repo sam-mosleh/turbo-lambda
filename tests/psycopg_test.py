@@ -29,7 +29,9 @@ def db() -> Generator[psycopg.Connection[dict[str, Any]]]:
         cursor_factory=psycopg.RawCursor,
     ) as default_conn:
         default_conn.execute(
-            sql.SQL("CREATE DATABASE {}").format(sql.Identifier(test_db_name))
+            sql.SQL("CREATE DATABASE {} WITH STRATEGY = FILE_COPY").format(
+                sql.Identifier(test_db_name)
+            )
         )
     with psycopg.connect(
         host=settings.DB_HOST,
@@ -41,9 +43,15 @@ def db() -> Generator[psycopg.Connection[dict[str, Any]]]:
         row_factory=dict_row,
         cursor_factory=SeqScanDetectingRawCursor,
     ) as test_conn:
-        test_conn.execute("CREATE TABLE table1(id SERIAL PRIMARY KEY, name TEXT)")
-        test_conn.execute("VACUUM ANALYZE")
-        test_conn.execute("SET enable_seqscan = off")
+        test_conn.execute(
+            b";".join(
+                [
+                    b"SET enable_seqscan = off",
+                    b"CREATE TABLE table1(id SERIAL PRIMARY KEY, name TEXT)",
+                    b"ANALYZE",
+                ]
+            )
+        )
         yield test_conn
 
 

@@ -1,12 +1,16 @@
 services:
   db:
     image: postgres:17.7
+    shm_size: 1gb
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
       - 5432:5432
     environment:
       - POSTGRES_PASSWORD=superpassword
     volumes:
       - ./containers/db/postgresql.conf:/etc/postgresql/postgresql.conf
+    # tmpfs:
+    #   - /var/lib/postgresql/data:size=1g
 
   pgadmin:
     image: dpage/pgadmin4
