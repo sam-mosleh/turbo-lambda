@@ -1,6 +1,20 @@
 
 # CHANGELOG
 
+## v0.10.0 (2026-09-03)
+
+### Other
+
+* 🧑‍💻 Improve local db performance ([`d6805e6`](https://github.com/sam-mosleh/turbo-lambda/commit/d6805e610c98d4b9e34700220709b01ee9295881))
+
+* 👔 Return json compatible response in errors ([`9eb4d79`](https://github.com/sam-mosleh/turbo-lambda/commit/9eb4d79ab961a33ec33bbf666c5b90b19f17410c))
+
+### Feature
+
+* ✨ Introduce TL_PRELOAD to automatically preload libraries ([`7173659`](https://github.com/sam-mosleh/turbo-lambda/commit/717365965203ccd14f4bbf42eed85bf98fc84989))
+
+* ✨ Support MessageGroupId handling in SQS ([`435e3e9`](https://github.com/sam-mosleh/turbo-lambda/commit/435e3e9f49879215d48145518a7b30bb97019d24))
+
 ## v0.9.2 (2026-06-24)
 
 ### Other
