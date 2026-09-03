@@ -23,8 +23,11 @@ dev = [
 update-turbo-lambda-layer = "turbo_lambda.scripts.update_turbo_lambda_layer:main"
 
 [build-system]
-requires = ["uv_build>=0.10.2,<0.11.0"]
+requires = ["uv_build>=0.12.3,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend.data]
+purelib = "data"
 
 [tool.mypy]
 plugins = ['pydantic.mypy']

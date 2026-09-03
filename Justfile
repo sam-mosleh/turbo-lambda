@@ -87,7 +87,7 @@ _build_zip python_platform python_version:
         --python-platform {{ if python_platform == "arm64" { "aarch64-manylinux_2_34" } else { "x86_64-manylinux_2_34" } }} \
         --python-version {{ python_version }} \
         --target ./build/opt-{{ python_platform }}-{{ python_version }}/python \
-        --requirement ./build/requirements.txt
+        .
     cd ./build/opt-{{ python_platform }}-{{ python_version }} && uvx --from deterministic-zip-go deterministic-zip -r ../opt-{{ python_platform }}-{{ python_version }}.zip .
 
 _build_layers:

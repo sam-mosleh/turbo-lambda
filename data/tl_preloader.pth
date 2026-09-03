@@ -1,0 +1,1 @@
+import importlib, os; (m := os.environ.get("TL_PRELOAD")) and importlib.import_module(m)
